@@ -1,0 +1,4 @@
+node_modules
+dist
+dist-firefox
+.git-commit-msg.txt

@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Google Photos Empty Album Cleaner",
+  "version": "1.0.0",
+  "description": "Preview and bulk-delete empty Google Photos albums from your signed-in browser session.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://photos.google.com/*"],
+  "background": {
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Google Photos Empty Album Cleaner"
+  },
+  "sidebar_action": {
+    "default_title": "Google Photos Empty Album Cleaner",
+    "default_panel": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://photos.google.com/albums*"],
+      "js": ["page.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://photos.google.com/albums*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "google-photos-empty-album-cleaner@tolztekh.github.io",
+      "strict_min_version": "128.0"
+    }
+  }
+}
