@@ -1,6 +1,6 @@
 import browser from "../lib/browser";
 import { readRuntimeState } from "../lib/storage";
-import type { AlbumRecord, RuntimeState, StoredSettings } from "../lib/types";
+import type { RuntimeState, StoredSettings } from "../lib/types";
 
 const rootElement = document.querySelector<HTMLDivElement>("#app");
 if (!rootElement) {
@@ -8,14 +8,29 @@ if (!rootElement) {
 }
 const root = rootElement;
 
+const toastHostElement = document.querySelector<HTMLDivElement>("#toast-host");
+if (!toastHostElement) {
+  throw new Error("Toast host was not found.");
+}
+const toastHost = toastHostElement;
+
+const REPO_URL = "https://github.com/tolztekh/Google-Photos-Empty-Album-Cleaner";
+const SUPPORT_EMAIL = "dev@sinemarka.com";
+const SITE_URL = "https://dev.sinemarka.com";
+
 let state: RuntimeState;
 let pageReady = false;
 let confirmText = "";
 let pollHandle: number | undefined;
+let lastProgressPhase = "";
+let lastProgressMessage = "";
+let lastFastDeleteReady: boolean | null = null;
 
 const selectedKeys = new Set<string>();
 let albumsSignature = "";
 let anchorIndex: number | null = null;
+
+type ToastKind = "info" | "success" | "warn" | "error";
 
 function escapeHtml(value: string): string {
   return value
@@ -24,6 +39,22 @@ function escapeHtml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function showToast(title: string, body = "", kind: ToastKind = "info", durationMs = 4200): void {
+  const toast = document.createElement("div");
+  toast.className = `toast ${kind}`;
+  toast.innerHTML = `
+    <div class="toast-title">${escapeHtml(title)}</div>
+    ${body ? `<div class="toast-body">${escapeHtml(body)}</div>` : ""}
+  `;
+  toastHost.appendChild(toast);
+  window.setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(6px)";
+    toast.style.transition = "opacity 0.18s ease, transform 0.18s ease";
+    window.setTimeout(() => toast.remove(), 200);
+  }, durationMs);
 }
 
 async function callRuntime<T>(message: unknown): Promise<T> {
@@ -37,7 +68,6 @@ async function callRuntime<T>(message: unknown): Promise<T> {
 function syncSelectionWithAlbums(): void {
   const signature = state.albums.map((album) => album.mediaKey).join("|");
   if (signature === albumsSignature) {
-    // Drop any keys that no longer exist (e.g. after deletion).
     for (const key of [...selectedKeys]) {
       if (!state.albums.some((album) => album.mediaKey === key)) {
         selectedKeys.delete(key);
@@ -89,8 +119,52 @@ function applyRowSelection(index: number, event: MouseEvent): void {
   render();
 }
 
+function applyTheme(theme: "dark" | "light"): void {
+  document.documentElement.dataset.theme = theme;
+}
+
+function themeIcon(isLight: boolean): string {
+  // Show the icon for the theme you can switch TO.
+  if (isLight) {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>`;
+  }
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+  </svg>`;
+}
+
+function maybeToastStateChanges(previousPhase: string, previousMessage: string, previousFastReady: boolean | null): void {
+  const phase = state.progress.phase;
+  const message = state.progress.message;
+  const fastReady = Boolean(state.settings.deleteRpc);
+
+  if (previousFastReady === false && fastReady) {
+    showToast("Fast delete ready", "The delete action was learned. You can now bulk-delete via the API.", "success");
+  }
+
+  if (previousPhase === phase && previousMessage === message) {
+    return;
+  }
+
+  if (phase === "confirm" && message.toLowerCase().includes("found")) {
+    showToast("Scan complete", message, "success");
+  } else if (phase === "confirm" && message.toLowerCase().includes("dry run")) {
+    showToast("Dry run complete", message, "info");
+  } else if (phase === "done") {
+    showToast("Deletion finished", message, "success", 5200);
+  } else if (phase === "error") {
+    showToast("Action needed", message, "error", 6500);
+  } else if (phase === "deleting" && previousPhase !== "deleting") {
+    showToast("Deleting albums", "Progress is saved — you can Stop and Resume later if needed.", "info");
+  }
+}
+
 function render(): void {
   syncSelectionWithAlbums();
+  applyTheme(state.settings.theme ?? "dark");
 
   const total = state.scanScannedCount;
   const emptyFound = state.scanEmptyCount ?? state.albums.length;
@@ -102,6 +176,7 @@ function render(): void {
   const fastDeleteReady = Boolean(state.settings.deleteRpc);
   const progressPercent = state.progress.total > 0 ? Math.round((state.progress.completed / state.progress.total) * 100) : 0;
   const canDelete = confirmText === "DELETE" && selectedCount > 0 && state.progress.phase !== "deleting";
+  const isLight = state.settings.theme === "light";
 
   root.innerHTML = `
     <div class="panel">
@@ -113,7 +188,12 @@ function render(): void {
               <strong>Sinemarka Google Photos Empty Album Cleaner</strong>
               <span class="small">Select empty albums, then delete the ones you choose.</span>
             </div>
-            <span class="badge">${escapeHtml(state.scanSource ?? "idle")}</span>
+            <div class="brand-actions">
+              <button id="themeToggle" class="theme-button" type="button" title="${isLight ? "Switch to dark theme" : "Switch to light theme"}" aria-label="${isLight ? "Switch to dark theme" : "Switch to light theme"}">
+                ${themeIcon(isLight)}
+              </button>
+              <span class="badge">${escapeHtml(state.scanSource ?? "idle")}</span>
+            </div>
           </div>
         </div>
         <div class="stack">
@@ -192,9 +272,24 @@ function render(): void {
           </div>
         </div>` : ""}
 
+      <div class="disclaimer">
+        <strong>Tips</strong>
+        <div class="tips small">
+          <div>1. Keep the Google Photos albums tab open while scanning or deleting.</div>
+          <div>2. Use Dry run first, then delete a small batch and re-scan to confirm albums are gone.</div>
+          <div>3. For large runs, keep batch size around 25–50 with a short pause between batches.</div>
+          <div>4. If a run is interrupted, reopen the panel and use Resume deletion.</div>
+        </div>
+        <strong>Disclaimer</strong>
+        <div class="small">This tool uses undocumented Google Photos endpoints and your signed-in browser session. Use at your own risk. Deletion is irreversible from the extension's perspective; album containers are removed, but your photos are not deleted. Not affiliated with or endorsed by Google.</div>
+      </div>
+
       <div class="footer small">
-        <span>&copy; ${new Date().getFullYear()} <a href="https://dev.sinemarka.com" target="_blank" rel="noopener noreferrer">Sinemarka</a></span>
-        <span>Support: <a href="mailto:dev@sinemarka.com">dev@sinemarka.com</a></span>
+        <div class="footer-links">
+          <span>&copy; ${new Date().getFullYear()} <a href="${SITE_URL}" target="_blank" rel="noopener noreferrer">Sinemarka</a></span>
+          <span>Support: <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></span>
+          <span><a href="${REPO_URL}" target="_blank" rel="noopener noreferrer">GitHub</a></span>
+        </div>
       </div>
     </div>
   `;
@@ -203,9 +298,19 @@ function render(): void {
 }
 
 async function syncState(): Promise<void> {
+  const previousPhase = lastProgressPhase;
+  const previousMessage = lastProgressMessage;
+  const previousFastReady = lastFastDeleteReady;
+
   state = await callRuntime<RuntimeState>({ type: "getRuntimeState" });
   const pageStatus = await callRuntime<{ isAlbumsPage: boolean }>({ type: "pageStatus" }).catch(() => ({ isAlbumsPage: false }));
   pageReady = pageStatus.isAlbumsPage;
+
+  maybeToastStateChanges(previousPhase, previousMessage, previousFastReady);
+  lastProgressPhase = state.progress.phase;
+  lastProgressMessage = state.progress.message;
+  lastFastDeleteReady = Boolean(state.settings.deleteRpc);
+
   render();
 }
 
@@ -216,17 +321,33 @@ async function updateSettings(settings: Partial<StoredSettings>): Promise<void> 
 
 function bindEvents(): void {
   document.querySelector<HTMLButtonElement>("#scanButton")?.addEventListener("click", async () => {
-    await callRuntime({ type: "scan", options: { includeShared: state.settings.includeShared } });
-    await syncState();
+    try {
+      showToast("Scanning", "Looking for empty albums…", "info", 2500);
+      await callRuntime({ type: "scan", options: { includeShared: state.settings.includeShared } });
+      await syncState();
+    } catch (error) {
+      showToast("Scan failed", error instanceof Error ? error.message : String(error), "error", 6500);
+    }
   });
 
   document.querySelector<HTMLButtonElement>("#watchButton")?.addEventListener("click", async () => {
-    await callRuntime({ type: state.watching ? "stopWatch" : "startWatch" });
-    await syncState();
+    try {
+      const starting = !state.watching;
+      await callRuntime({ type: starting ? "startWatch" : "stopWatch" });
+      showToast(
+        starting ? "Watching" : "Watch stopped",
+        starting ? "Scroll the albums page — empty albums will be collected live." : "Collection paused. You can delete the albums found so far.",
+        "info",
+      );
+      await syncState();
+    } catch (error) {
+      showToast("Watch failed", error instanceof Error ? error.message : String(error), "error");
+    }
   });
 
   document.querySelector<HTMLButtonElement>("#refreshButton")?.addEventListener("click", async () => {
     await syncState();
+    showToast("Refreshed", "Status and album list updated.", "info", 2200);
   });
 
   document.querySelector<HTMLButtonElement>("#openTabButton")?.addEventListener("click", async () => {
@@ -235,6 +356,7 @@ function bindEvents(): void {
 
   document.querySelector<HTMLButtonElement>("#cancelButton")?.addEventListener("click", async () => {
     await callRuntime({ type: "cancel" });
+    showToast("Stopping", "Current deletion will stop after the album in progress.", "warn");
     await syncState();
   });
 
@@ -243,28 +365,41 @@ function bindEvents(): void {
       selectedKeys.add(album.mediaKey);
     }
     render();
+    showToast("Selected all", `${state.albums.length} album(s) selected.`, "info", 2200);
   });
 
   document.querySelector<HTMLButtonElement>("#selectNoneButton")?.addEventListener("click", () => {
     selectedKeys.clear();
     anchorIndex = null;
     render();
+    showToast("Selection cleared", "No albums are selected for deletion.", "info", 2200);
   });
 
   document.querySelector<HTMLButtonElement>("#deleteButton")?.addEventListener("click", async () => {
     const albumMediaKeys = state.albums
       .filter((album) => selectedKeys.has(album.mediaKey))
       .map((album) => album.mediaKey);
-    await callRuntime({
-      type: "delete",
-      options: {
-        albumMediaKeys,
-        dryRun: state.settings.dryRun,
-        includeShared: state.settings.includeShared,
-      },
-    });
-    confirmText = "";
-    await syncState();
+    try {
+      if (state.settings.dryRun) {
+        showToast("Dry run", `Checking ${albumMediaKeys.length} selected album(s)…`, "info");
+      } else if (!state.settings.deleteRpc) {
+        showToast("Fast delete not ready", "Delete one empty album manually in Google Photos first.", "warn", 6500);
+      } else {
+        showToast("Starting deletion", `${albumMediaKeys.length} album(s) queued.`, "info");
+      }
+      await callRuntime({
+        type: "delete",
+        options: {
+          albumMediaKeys,
+          dryRun: state.settings.dryRun,
+          includeShared: state.settings.includeShared,
+        },
+      });
+      confirmText = "";
+      await syncState();
+    } catch (error) {
+      showToast("Delete failed", error instanceof Error ? error.message : String(error), "error", 6500);
+    }
   });
 
   document.querySelector<HTMLInputElement>("#includeShared")?.addEventListener("change", async (event) => {
@@ -272,7 +407,15 @@ function bindEvents(): void {
   });
 
   document.querySelector<HTMLInputElement>("#dryRun")?.addEventListener("change", async (event) => {
-    await updateSettings({ dryRun: (event.currentTarget as HTMLInputElement).checked });
+    const enabled = (event.currentTarget as HTMLInputElement).checked;
+    await updateSettings({ dryRun: enabled });
+    showToast(enabled ? "Dry run on" : "Dry run off", enabled ? "Delete will only count albums." : "Delete will remove selected albums.", "info", 2500);
+  });
+
+  document.querySelector<HTMLButtonElement>("#themeToggle")?.addEventListener("click", async () => {
+    const next = state.settings.theme === "light" ? "dark" : "light";
+    await updateSettings({ theme: next });
+    showToast(next === "light" ? "Light theme" : "Dark theme", "Theme preference saved.", "info", 1800);
   });
 
   document.querySelector<HTMLInputElement>("#batchSize")?.addEventListener("change", async (event) => {
@@ -286,8 +429,13 @@ function bindEvents(): void {
   });
 
   document.querySelector<HTMLButtonElement>("#resumeButton")?.addEventListener("click", async () => {
-    await callRuntime({ type: "resume" });
-    await syncState();
+    try {
+      showToast("Resuming", `${state.pendingDeleteKeys.length} album(s) remaining.`, "info");
+      await callRuntime({ type: "resume" });
+      await syncState();
+    } catch (error) {
+      showToast("Resume failed", error instanceof Error ? error.message : String(error), "error");
+    }
   });
 
   document.querySelector<HTMLInputElement>("#confirmInput")?.addEventListener("input", (event) => {
@@ -324,6 +472,10 @@ function bindEvents(): void {
 
 async function bootstrap(): Promise<void> {
   state = await readRuntimeState();
+  applyTheme(state.settings.theme ?? "dark");
+  lastProgressPhase = state.progress.phase;
+  lastProgressMessage = state.progress.message;
+  lastFastDeleteReady = Boolean(state.settings.deleteRpc);
   await syncState();
 
   pollHandle = window.setInterval(async () => {
@@ -332,8 +484,6 @@ async function bootstrap(): Promise<void> {
     }
   }, 1000);
 
-  // React to the content script learning the delete RPC (or any state change)
-  // without constantly polling, so the "fast delete ready" status flips live.
   browser.storage.onChanged.addListener((_changes, area) => {
     if (area !== "local") return;
     const typingConfirm = document.activeElement?.id === "confirmInput";

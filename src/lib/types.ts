@@ -62,12 +62,15 @@ export interface DeleteRpcSpec {
   template: string;
 }
 
+export type ThemeMode = "dark" | "light";
+
 export interface StoredSettings {
   includeShared: boolean;
   dryRun: boolean;
   excludedAlbumKeys: string[];
   batchSize: number;
   pauseMs: number;
+  theme: ThemeMode;
   deleteRpc: DeleteRpcSpec | null;
 }
 

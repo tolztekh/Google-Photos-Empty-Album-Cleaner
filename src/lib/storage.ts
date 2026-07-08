@@ -15,6 +15,7 @@ export const defaultSettings: StoredSettings = {
   excludedAlbumKeys: [],
   batchSize: 25,
   pauseMs: 1500,
+  theme: "dark",
   deleteRpc: null,
 };
 

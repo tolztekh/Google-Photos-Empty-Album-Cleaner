@@ -1,6 +1,64 @@
-:root {
+:root,
+html[data-theme="dark"] {
   color-scheme: dark;
-  font-family: Inter, Segoe UI, sans-serif;
+  --bg: #10131a;
+  --text: #eef2ff;
+  --card-bg: #141b26;
+  --card-border: #263042;
+  --muted: #9fb0cb;
+  --muted-strong: #b5bfd3;
+  --badge-bg: #24324a;
+  --badge-text: #c9d7f2;
+  --input-bg: #0f172a;
+  --input-border: #334155;
+  --field-bg: #0e1626;
+  --field-border: #263042;
+  --secondary-bg: #20293a;
+  --album-border: #273246;
+  --album-selected-bg: #16223c;
+  --album-selected-border: #4f7cff;
+  --progress-track: #1d2534;
+  --error-text: #fecaca;
+  --footer-text: #8b95a9;
+  --link: #9db4ff;
+  --ok: #6ee7a8;
+  --warn: #b45309;
+  --warn-text: #f4c15d;
+  --primary: #4f7cff;
+  --danger: #c93f4a;
+  --switch-track: #334155;
+  --switch-thumb: #eef2ff;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6fb;
+  --text: #152033;
+  --card-bg: #ffffff;
+  --card-border: #d7deea;
+  --muted: #5b6b82;
+  --muted-strong: #3f4f66;
+  --badge-bg: #e8eef8;
+  --badge-text: #35507a;
+  --input-bg: #ffffff;
+  --input-border: #c9d4e5;
+  --field-bg: #ffffff;
+  --field-border: #c9d4e5;
+  --secondary-bg: #e8eef8;
+  --album-border: #d7deea;
+  --album-selected-bg: #eef3ff;
+  --album-selected-border: #4f7cff;
+  --progress-track: #e2e8f2;
+  --error-text: #b91c1c;
+  --footer-text: #6b7a90;
+  --link: #3b5ccc;
+  --ok: #0f7a4a;
+  --warn: #9a6700;
+  --warn-text: #9a6700;
+  --primary: #3b63e8;
+  --danger: #c93f4a;
+  --switch-track: #c9d4e5;
+  --switch-thumb: #ffffff;
 }
 
 body {
@@ -8,8 +66,9 @@ body {
   width: 100%;
   min-width: 320px;
   min-height: 100vh;
-  background: #10131a;
-  color: #eef2ff;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, Segoe UI, sans-serif;
 }
 
 * {
@@ -27,16 +86,18 @@ button {
   border: 0;
   border-radius: 10px;
   padding: 10px 14px;
-  background: #4f7cff;
+  background: var(--primary);
   color: white;
 }
 
 button.secondary {
-  background: #20293a;
+  background: var(--secondary-bg);
+  color: var(--text);
 }
 
 button.danger {
-  background: #c93f4a;
+  background: var(--danger);
+  color: white;
 }
 
 button:disabled {
@@ -44,12 +105,13 @@ button:disabled {
   opacity: 0.55;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
   width: 100%;
   border-radius: 10px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #eef2ff;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text);
   padding: 10px 12px;
 }
 
@@ -71,9 +133,9 @@ label.checkbox {
 }
 
 .card {
-  border: 1px solid #263042;
+  border: 1px solid var(--card-border);
   border-radius: 14px;
-  background: #141b26;
+  background: var(--card-bg);
   padding: 14px;
 }
 
@@ -90,7 +152,7 @@ label.checkbox {
 }
 
 .small {
-  color: #9fb0cb;
+  color: var(--muted);
   font-size: 12px;
 }
 
@@ -100,8 +162,8 @@ label.checkbox {
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 12px;
-  background: #24324a;
-  color: #c9d7f2;
+  background: var(--badge-bg);
+  color: var(--badge-text);
 }
 
 .album-list {
@@ -112,18 +174,19 @@ label.checkbox {
 }
 
 .album-item {
-  border: 1px solid #273246;
+  border: 1px solid var(--album-border);
   border-radius: 12px;
   padding: 10px;
   display: grid;
   gap: 8px;
   cursor: pointer;
   user-select: none;
+  background: transparent;
 }
 
 .album-item.selected {
-  border-color: #4f7cff;
-  background: #16223c;
+  border-color: var(--album-selected-border);
+  background: var(--album-selected-bg);
 }
 
 .brand {
@@ -146,17 +209,52 @@ label.checkbox {
   min-width: 0;
 }
 
-.footer {
+.brand-actions {
   display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
+}
+
+.theme-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  background: var(--secondary-bg);
+  color: var(--text);
+  border: 1px solid var(--card-border);
+}
+
+.theme-button:hover {
+  border-color: var(--primary);
+}
+
+.theme-button svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.footer {
+  display: grid;
+  gap: 10px;
   padding: 4px 2px 2px;
-  color: #8b95a9;
+  color: var(--footer-text);
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
 }
 
 .footer a {
-  color: #9db4ff;
+  color: var(--link);
   text-decoration: none;
 }
 
@@ -164,12 +262,92 @@ label.checkbox {
   text-decoration: underline;
 }
 
+.disclaimer {
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.disclaimer strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.tips {
+  display: grid;
+  gap: 4px;
+}
+
+#toast-host {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  display: grid;
+  gap: 8px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  color: var(--text);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  animation: toast-in 0.18s ease-out;
+}
+
+.toast.info {
+  border-left: 3px solid var(--primary);
+}
+
+.toast.success {
+  border-left: 3px solid var(--ok);
+}
+
+.toast.warn {
+  border-left: 3px solid var(--warn-text);
+}
+
+.toast.error {
+  border-left: 3px solid var(--danger);
+}
+
+.toast-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.toast-body {
+  font-size: 12px;
+  color: var(--muted-strong);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .small.ok {
-  color: #6ee7a8;
+  color: var(--ok);
 }
 
 .small.warn {
-  color: #f4c15d;
+  color: var(--warn-text);
 }
 
 .batch-controls {
@@ -186,8 +364,8 @@ label.checkbox {
 .field input {
   padding: 6px 8px;
   border-radius: 8px;
-  border: 1px solid #263042;
-  background: #0e1626;
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
   color: inherit;
 }
 
@@ -198,12 +376,13 @@ label.checkbox {
 }
 
 .totals-grid > div {
-  border: 1px solid #263042;
+  border: 1px solid var(--card-border);
   border-radius: 10px;
   padding: 8px;
   display: grid;
   gap: 2px;
   text-align: center;
+  background: transparent;
 }
 
 .totals-num {
@@ -217,13 +396,13 @@ label.checkbox {
 }
 
 .muted {
-  color: #b5bfd3;
+  color: var(--muted-strong);
 }
 
 .progress-bar {
   width: 100%;
   height: 10px;
-  background: #1d2534;
+  background: var(--progress-track);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -231,13 +410,13 @@ label.checkbox {
 .progress-bar > span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #4f7cff, #4fd1c5);
+  background: linear-gradient(90deg, var(--primary), #4fd1c5);
 }
 
 .error-list {
   max-height: 130px;
   overflow: auto;
-  color: #fecaca;
+  color: var(--error-text);
   font-size: 12px;
 }
 
