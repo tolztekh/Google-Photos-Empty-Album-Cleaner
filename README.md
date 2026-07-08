@@ -1,6 +1,12 @@
-# Google Photos Empty Album Cleaner
+# Sinemarka Google Photos Empty Album Cleaner
+
+<p align="center">
+  <img src="logo.png" alt="Sinemarka Google Photos Empty Album Cleaner" width="128" />
+</p>
 
 A Manifest V3 WebExtension (Chrome + Firefox) that finds and bulk-deletes **empty** Google Photos albums using your own signed-in browser session. Google Photos has no built-in way to delete albums in bulk — this fills that gap.
+
+By [Sinemarka](https://dev.sinemarka.com) · Support: [dev@sinemarka.com](mailto:dev@sinemarka.com)
 
 > Tested on a real account: it removed **5,599 empty albums** in a single run via the Google Photos web API.
 
@@ -76,6 +82,10 @@ Tip: try **Dry run only** first, and after a small batch click **Refresh** → *
 
 This tool uses undocumented Google Photos endpoints and automates your own logged-in session. Use at your own risk. Deletion is irreversible from the extension's perspective; deleted albums follow Google Photos' normal behavior (album containers are removed — your photos are not deleted). Not affiliated with or endorsed by Google.
 
+## Support
+
+Questions or issues: [dev@sinemarka.com](mailto:dev@sinemarka.com) · [dev.sinemarka.com](https://dev.sinemarka.com)
+
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT © [Sinemarka](https://dev.sinemarka.com) — see [LICENSE](LICENSE).

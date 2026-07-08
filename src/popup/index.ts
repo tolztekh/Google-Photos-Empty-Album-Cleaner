@@ -107,8 +107,14 @@ function render(): void {
     <div class="panel">
       <div class="card stack">
         <div>
-          <div class="row"><strong>Google Photos Empty Album Cleaner</strong><span class="badge">${escapeHtml(state.scanSource ?? "idle")}</span></div>
-          <div class="small">Select empty albums, then delete the ones you choose.</div>
+          <div class="row brand">
+            <img class="brand-logo" src="icons/icon-48.png" alt="Sinemarka" />
+            <div class="brand-text">
+              <strong>Sinemarka Google Photos Empty Album Cleaner</strong>
+              <span class="small">Select empty albums, then delete the ones you choose.</span>
+            </div>
+            <span class="badge">${escapeHtml(state.scanSource ?? "idle")}</span>
+          </div>
         </div>
         <div class="stack">
           <label class="checkbox"><input id="includeShared" type="checkbox" ${state.settings.includeShared ? "checked" : ""} /> Include shared empty albums</label>
@@ -185,6 +191,11 @@ function render(): void {
             ${state.progress.failures.map((failure) => `<div>${escapeHtml(failure.title)}: ${escapeHtml(failure.reason)}</div>`).join("")}
           </div>
         </div>` : ""}
+
+      <div class="footer small">
+        <span>&copy; ${new Date().getFullYear()} <a href="https://dev.sinemarka.com" target="_blank" rel="noopener noreferrer">Sinemarka</a></span>
+        <span>Support: <a href="mailto:dev@sinemarka.com">dev@sinemarka.com</a></span>
+      </div>
     </div>
   `;
 

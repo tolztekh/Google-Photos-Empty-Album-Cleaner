@@ -24,6 +24,7 @@ function copyStaticFiles(outDir, manifestSource) {
   mkdirSync(outDir, { recursive: true });
   cpSync(resolve(rootDir, "extension/popup.html"), resolve(outDir, "popup.html"));
   cpSync(resolve(rootDir, "extension/popup.css"), resolve(outDir, "popup.css"));
+  cpSync(resolve(rootDir, "extension/icons"), resolve(outDir, "icons"), { recursive: true });
   cpSync(resolve(rootDir, manifestSource), resolve(outDir, "manifest.json"));
 }
 

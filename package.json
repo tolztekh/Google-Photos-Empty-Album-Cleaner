@@ -5,6 +5,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "icons": "node scripts/generate-icons.mjs",
     "build": "node scripts/build.mjs",
     "dev": "node scripts/build.mjs --watch",
     "typecheck": "tsc --noEmit"
@@ -12,6 +13,7 @@
   "devDependencies": {
     "@types/chrome": "^0.0.278",
     "esbuild": "^0.25.6",
+    "sharp": "^0.35.3",
     "typescript": "^5.8.3"
   },
   "dependencies": {
