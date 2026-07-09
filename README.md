@@ -94,8 +94,6 @@ npm run release
 
 Creates `release/google-photos-empty-album-cleaner-1.0.0-firefox.zip` and `-chrome.zip` for store upload.
 
-Firefox listing copy: [docs/firefox-submission.md](docs/firefox-submission.md)
-
 ## License
 
 MIT © [Sinemarka](https://dev.sinemarka.com) — see [LICENSE](LICENSE).
