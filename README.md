@@ -1,99 +1,176 @@
+<div align="center">
+
+<img src="logo.png" alt="Sinemarka Google Photos Empty Album Cleaner" width="120" />
+
 # Sinemarka Google Photos Empty Album Cleaner
 
-<p align="center">
-  <img src="logo.png" alt="Sinemarka Google Photos Empty Album Cleaner" width="128" />
-</p>
+**Find and bulk-delete empty Google Photos albums — safely, in batches, from your own browser session.**
 
-A Manifest V3 WebExtension (Chrome + Firefox) that finds and bulk-deletes **empty** Google Photos albums using your own signed-in browser session. Google Photos has no built-in way to delete albums in bulk — this fills that gap.
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/tolztekh/Google-Photos-Empty-Album-Cleaner)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Firefox](https://img.shields.io/badge/Firefox-128%2B-orange)](extension/manifest.firefox.json)
+[![Chrome](https://img.shields.io/badge/Chrome-MV3-4285F4)](extension/manifest.chrome.json)
 
-By [Sinemarka](https://dev.sinemarka.com) · Support: [dev@sinemarka.com](mailto:dev@sinemarka.com)
+[Website](https://dev.sinemarka.com) · [Support](mailto:dev@sinemarka.com) · [Report an issue](https://github.com/tolztekh/Google-Photos-Empty-Album-Cleaner/issues)
 
-> Tested on a real account: it removed **5,599 empty albums** in a single run via the Google Photos web API.
+</div>
+
+---
+
+Google Photos has no built-in way to remove hundreds or thousands of empty albums. This extension scans your library, lets you preview what will be removed, and deletes empty album containers in controlled batches — without touching your photos.
+
+> **Battle-tested:** removed **5,599 empty albums** in a single run via the Google Photos web API on a real account.
+
+---
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%">
+
+**1 · Ready to scan**  
+Extension sidebar alongside Google Photos, empty albums visible (`No items`).
+
+<img src="docs/screenshots/01-ready.png" alt="Ready state with split view" width="100%" />
+
+</td>
+<td width="50%">
+
+**2 · Scan results**  
+Fast scan finds empty albums; multi-select preview with totals.
+
+<img src="docs/screenshots/02-scan-results.png" alt="Scan results with selected empty albums" width="100%" />
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**3 · Arm fast delete**  
+Delete one album manually — the extension learns the API request.
+
+<img src="docs/screenshots/03-arm-fast-delete.png" alt="Manual delete to arm fast delete" width="100%" />
+
+</td>
+<td width="50%">
+
+**4 · Batch deletion**  
+Progress bar, RPC deletion, configurable batch size and pause.
+
+<img src="docs/screenshots/04-deleting.png" alt="Deletion in progress" width="100%" />
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**5 · Complete**  
+Empty albums removed; only albums with photos remain.
+
+<img src="docs/screenshots/05-complete.png" alt="Deletion complete" width="100%" />
+
+</td>
+<td width="50%">
+
+**6 · Dark theme**  
+Light and dark themes with sun/moon toggle.
+
+<img src="docs/screenshots/06-dark-theme.png" alt="Dark theme" width="100%" />
+
+</td>
+</tr>
+</table>
+
+---
 
 ## Features
 
-- **Fast scan** of your entire album list via Google Photos' internal `batchexecute` album-list RPC, filtered to albums with `itemCount === 0`.
-- **Watch while I scroll** fallback — if the fast scan is blocked, scroll the albums page and empty albums are collected live from the DOM.
-- **Multi-select preview** — click to toggle, Shift+click for a range, Ctrl/Cmd+click for a single album, plus Select all / Clear.
-- **API-based deletion** — deletes through the same request Google's own UI uses (learned at runtime, see below), so it scales to thousands of albums without touching the page DOM.
-- **Batching + pause** — configurable batch size and pause between batches to avoid rate limiting.
-- **Progress-safe resume** — the remaining queue is persisted, so if you Stop, close the panel, or reload the tab, you can resume where you left off.
-- **Dry run**, live progress, per-album failure log, and a Totals panel (total albums, empty found, empty remaining, deleted this run, albums remaining).
+| | |
+|---|---|
+| **Fast scan** | Enumerates your full album list via Google Photos' internal album-list RPC (`itemCount === 0`). |
+| **Scroll fallback** | *Watch while I scroll* collects empty albums live when lazy-loading blocks a full scan. |
+| **Smart selection** | Click, Shift+range, Ctrl/Cmd toggle, Select all / Clear. |
+| **API deletion** | Learns the delete request from one manual delete, then replays it for thousands of albums. |
+| **Batch control** | Configurable batch size + pause between batches to avoid rate limits. |
+| **Resume** | Stops safely; remaining queue is persisted so you can continue later. |
+| **Safety** | Dry run, type `DELETE` to confirm, per-album failure log, toast notifications. |
+| **Polish** | Light/dark theme, sidebar (Chrome) / sidebar (Firefox), full-tab view. |
 
-## How deletion works (and why it's safe-ish)
+---
 
-Google does **not** document album deletion, and the internal RPC id changes over time, so this extension does not hardcode one. Instead it **learns the delete request from your own browser**:
+## Quick start
 
-1. You delete **one** empty album manually in Google Photos (open it → menu → *Delete album*).
-2. A MAIN-world bridge observes the `batchexecute` request the page sends and extracts a reusable template (the album id is replaced with a placeholder). **No auth tokens are stored** — only the request shape.
-3. The panel shows **“Fast delete is ready”**, and every selected album is then deleted by replaying that request via the API.
+### Install (development)
 
-Because it replays the exact action the official UI performs, it is as safe as deleting by hand — but it is an **undocumented, unofficial API**. If Google changes it, just delete one album manually again to re-learn the request.
+```bash
+git clone https://github.com/tolztekh/Google-Photos-Empty-Album-Cleaner.git
+cd Google-Photos-Empty-Album-Cleaner
+npm install
+npm run build
+```
+
+| Browser | Load |
+|---------|------|
+| **Chrome** | `chrome://extensions` → Developer mode → Load unpacked → `dist/` |
+| **Firefox** | `about:debugging` → Load Temporary Add-on → `dist-firefox/manifest.json` |
+
+### Use
+
+1. Open [photos.google.com/albums](https://photos.google.com/albums) and sign in.
+2. Open the extension (side panel / sidebar).
+3. **Scan empty albums** (or *Watch while I scroll* if the scan times out).
+4. **Arm fast delete** — delete **one** empty album manually in Google Photos.
+5. Select albums → tune batch size / pause → type `DELETE` → delete.
+
+**Tip:** run **Dry run** first, then delete a small batch and re-scan to confirm counts dropped before a large run.
+
+---
+
+## How deletion works
+
+Google does not document album deletion, and internal RPC ids change over time. This extension does **not** hardcode a delete endpoint.
+
+1. You delete **one** empty album manually (menu → *Delete album*).
+2. A page bridge observes the `batchexecute` request and saves a reusable template (album id → placeholder). **No auth tokens are stored.**
+3. The panel shows **Fast delete is ready** — selected albums are deleted by replaying that same request.
+
+If Google changes the API, delete one album manually again to re-learn.
+
+---
 
 ## Security & privacy
 
-- Runs only on `https://photos.google.com/*` (host permission scoped to that origin).
-- All internal messaging is validated to the exact page origin (`event.origin` checks; `postMessage` is sent to the specific origin, never `"*"`).
-- Session tokens are read from the page's own globals and used only to call Google Photos on your behalf. They are **never persisted** and never leave your browser.
-- The only data written to `chrome.storage.local` is your settings, the scanned album list, deletion progress, and the (token-free) learned request template.
-- No analytics, no external servers, no network calls to anything other than `photos.google.com`.
+- Runs only on `https://photos.google.com/*`
+- `postMessage` restricted to the page origin (never `"*"`)
+- Session tokens used in-memory only — **never persisted**
+- `storage` holds settings, scan results, progress, and the token-free RPC template
+- No analytics, no external servers, no third-party network calls
+
+---
 
 ## Development
 
 ```bash
-npm install
-npm run build      # builds dist/ (Chrome) and dist-firefox/ (Firefox)
-npm run dev        # rebuild on change
+npm run build       # dist/ + dist-firefox/
+npm run dev         # watch mode
 npm run typecheck
+npm run icons       # regenerate from logo.png
+npm run release     # build + zip for store upload
 ```
 
-The build produces two packages:
+Release zips: `release/google-photos-empty-album-cleaner-1.0.0-firefox.zip` and `-chrome.zip`
 
-- `dist/` — Chrome (Side Panel API)
-- `dist-firefox/` — Firefox (sidebar; requires Firefox 128+ for MAIN-world content scripts)
-
-## Load in Chrome
-
-1. Open `chrome://extensions`
-2. Enable **Developer mode**
-3. Click **Load unpacked** and select the `dist` folder
-4. Click the toolbar icon to open the side panel (or use **Open in full tab**)
-
-## Load in Firefox
-
-1. Open `about:debugging#/runtime/this-firefox`
-2. Click **Load Temporary Add-on**
-3. Select `dist-firefox/manifest.json`
-4. Click the toolbar icon to toggle the sidebar
-
-## Usage
-
-1. Open `https://photos.google.com/albums` and sign in.
-2. Open the extension (side panel / sidebar).
-3. **Scan empty albums** (or use **Watch while I scroll** if the scan times out).
-4. Arm fast delete: delete **one** empty album manually in Google Photos. The panel flips to “Fast delete is ready”.
-5. Select the albums to delete (click / Shift+click / Ctrl+click / Select all).
-6. Optionally tune **Batch size** and **Pause between batches**.
-7. Type `DELETE`, then click **Delete selected album(s)**.
-
-Tip: try **Dry run only** first, and after a small batch click **Refresh** → **Scan** to confirm the empty-album count actually dropped before doing the full run. If a run is interrupted, reopen the panel and click **Resume deletion**.
+---
 
 ## Disclaimer
 
-This tool uses undocumented Google Photos endpoints and automates your own logged-in session. Use at your own risk. Deletion is irreversible from the extension's perspective; deleted albums follow Google Photos' normal behavior (album containers are removed — your photos are not deleted). Not affiliated with or endorsed by Google.
+This tool uses undocumented Google Photos endpoints in your signed-in session. Use at your own risk. Only **empty album containers** are removed — your photos are not deleted. Not affiliated with or endorsed by Google.
 
-## Support
+---
 
-Questions or issues: [dev@sinemarka.com](mailto:dev@sinemarka.com) · [dev.sinemarka.com](https://dev.sinemarka.com)
+<div align="center">
 
-## Release packages
+**MIT** © [Sinemarka](https://dev.sinemarka.com) · [dev@sinemarka.com](mailto:dev@sinemarka.com)
 
-```bash
-npm run release
-```
-
-Creates `release/google-photos-empty-album-cleaner-1.0.0-firefox.zip` and `-chrome.zip` for store upload.
-
-## License
-
-MIT © [Sinemarka](https://dev.sinemarka.com) — see [LICENSE](LICENSE).
+</div>
