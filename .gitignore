@@ -3,6 +3,8 @@ dist
 dist-firefox
 release
 .git-commit-msg.txt
+*.code-workspace
+*.workspace
 *.mp4
 screenshot-*.jpg
 01---*.png
